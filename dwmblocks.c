@@ -3,6 +3,7 @@
 #include<string.h>
 #include<unistd.h>
 #include<signal.h>
+#include<errno.h>
 #ifndef NO_X
 #include<X11/Xlib.h>
 #endif
@@ -28,6 +29,8 @@ typedef struct {
 void dummysighandler(int num);
 #endif
 void sighandler(int num);
+void buttonhandler(int sig, siginfo_t *si, void *ucontext);
+void remove_all(char *str, char to_remove);
 void getcmds(int time);
 void getsigcmds(unsigned int signal);
 void setupsignals();
@@ -53,11 +56,25 @@ static void (*writestatus) () = pstdout;
 static char statusbar[LENGTH(blocks)][CMDLENGTH] = {0};
 static char statusstr[2][STATUSLENGTH];
 static int statusContinue = 1;
-static int returnStatus = 0;
+//static int returnStatus = 0;
+
+void remove_all(char *str, char to_remove) {
+    char *read = str;
+    char *write = str;
+    while (*read) {
+        if (*read != to_remove) {
+            *write++ = *read;
+        }
+        ++read;
+    }
+    *write = '\0';
+}
+
 
 //opens process *cmd and stores output in *output
 void getcmd(const Block *block, char *output)
 {
+    /*
 	strcpy(output, block->icon);
 	FILE *cmdf = popen(block->command, "r");
 	if (!cmdf)
@@ -78,6 +95,44 @@ void getcmd(const Block *block, char *output)
 	else
 		output[i++] = '\0';
 	pclose(cmdf);
+    */
+	if (block->signal)
+    {
+        output[0] = block->signal;
+        output++;
+    }
+    char *cmd = block->command;
+    FILE *cmdf = popen(cmd,"r");
+    if (!cmdf){
+        //printf("failed to run: %s, %d\n", block->command, errno);
+        return;
+    }
+    char tmpstr[CMDLENGTH] = "";
+    // TODO decide whether its better to use the last value till next time or just keep trying while the error was the interrupt
+    // this keeps trying to read if it got nothing and the error was an interrupt
+    //  could also just read to a separate buffer and not move the data over if interrupted
+    //  this way will take longer trying to complete 1 thing but will get it done
+    //  the other way will move on to keep going with everything and the part that failed to read will be wrong till its updated again
+    // either way you have to save the data to a temp buffer because when it fails it writes nothing and then then it gets displayed before this finishes
+    char * s;
+    int e;
+    do {
+        errno = 0;
+        s = fgets(tmpstr, CMDLENGTH-(strlen(delim)+1), cmdf);
+        e = errno;
+    } while (!s && e == EINTR);
+    pclose(cmdf);
+    int i = strlen(block->icon);
+    strcpy(output, block->icon);
+    strcpy(output+i, tmpstr);
+    remove_all(output, '\n');
+    i = strlen(output);
+    if ((i > 0 && block != &blocks[LENGTH(blocks)])){
+        strcat(output, delim);
+    }
+    i+=strlen(delim);
+    output[i++] = '\0';
+
 }
 
 void getcmds(int time)
@@ -108,10 +163,21 @@ void setupsignals()
         signal(i, dummysighandler);
 #endif
 
+    struct sigaction sa;
 	for (unsigned int i = 0; i < LENGTH(blocks); i++) {
-		if (blocks[i].signal > 0)
+		if (blocks[i].signal > 0) {
 			signal(SIGMINUS+blocks[i].signal, sighandler);
+            sigaddset(&sa.sa_mask, SIGRTMIN+blocks[i].signal);
+        }
 	}
+    sa.sa_sigaction = buttonhandler;
+    sa.sa_flags = SA_SIGINFO;
+    sigaction(SIGUSR1, &sa, NULL);
+    struct sigaction sigchld_action = {
+        .sa_handler = SIG_DFL,
+        .sa_flags = SA_NOCLDWAIT
+    };
+    sigaction(SIGCHLD, &sigchld_action, NULL);
 
 }
 
@@ -183,6 +249,30 @@ void sighandler(int signum)
 	getsigcmds(signum-SIGPLUS);
 	writestatus();
 }
+
+// Adding clickable blocks
+void buttonhandler(int sig, siginfo_t *si, void *ucontext)
+{
+    char button[2] = {'0' + (si->si_value.sival_int & 0xff), '\0'};
+    pid_t process_id = getpid();
+    sig = si->si_value.sival_int >> 8;
+    if (fork() == 0) {
+        const Block *current;
+        for (int i = 0; i < LENGTH(blocks); i++) {
+            current = blocks + i;
+            if (current->signal == sig)
+                break;
+        }
+        char shcmd[1024];
+        sprintf(shcmd,"%s && kill -%d %d",current->command, current->signal+34,process_id);
+        char *command[] = { "/bin/sh", "-c", shcmd, NULL };
+        setenv("BLOCK_BUTTON", button, 1);
+        setsid();
+        execvp(command[0], command);
+        exit(EXIT_SUCCESS);
+    }
+}
+
 
 void termhandler()
 {
