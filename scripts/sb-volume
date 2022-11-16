@@ -19,7 +19,8 @@ vol=$(amixer get Master | tail -n1 | sed -r "s/.*\[(.*)%\].*/\1/")
 
 # If muted, print 🔇 and exit.
 #[ "$vol" != "${vol%\[MUTED\]}" ] && echo 🔇 && exit
-if [ $(pacmd list-sinks | awk '/muted/ { print $2 }' | awk 'NR==1{print $1}') == "yes" ]
+#if [ $(pacmd list-sinks | awk '/muted/ { print $2 }' | awk 'NR==1{print $1}') == "yes" ]
+if [ $(amixer get Master | awk 'NR==6{print $6}') == "[off]" ]
 then
     vol=-1
 fi
