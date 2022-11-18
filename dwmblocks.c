@@ -74,28 +74,6 @@ void remove_all(char *str, char to_remove) {
 //opens process *cmd and stores output in *output
 void getcmd(const Block *block, char *output)
 {
-    /*
-	strcpy(output, block->icon);
-	FILE *cmdf = popen(block->command, "r");
-	if (!cmdf)
-		return;
-	int i = strlen(block->icon);
-	fgets(output+i, CMDLENGTH-i-delimLen, cmdf);
-	i = strlen(output);
-	if (i == 0) {
-		//return if block and command output are both empty
-		pclose(cmdf);
-		return;
-	}
-	//only chop off newline if one is present at the end
-	i = output[i-1] == '\n' ? i-1 : i;
-	if (delim[0] != '\0') {
-		strncpy(output+i, delim, delimLen); 
-	}
-	else
-		output[i++] = '\0';
-	pclose(cmdf);
-    */
 	if (block->signal)
     {
         output[0] = block->signal;
