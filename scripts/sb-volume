@@ -5,21 +5,19 @@
 case $BLOCK_BUTTON in
 	1) amixer set Master toggle ;;
 	2) notify-send "📢 Volume module" "\- Shows volume 🔊, 🔇 if muted.
-- Left click to mute.
-- Right Click to open audio mixer.
-- Scroll to change." ;;
-	3) pavucontrol ;;
+        - Left click to mute.
+        - Right Click to open audio mixer.
+        - Scroll to change." && 
+        pavucontrol;;
+	3) swtchaudio ;;
 	4) pamixer --allow-boost -i 1 ;;
 	5) pamixer --allow-boost -d 1 ;;
 	6) "$TERMINAL" -e "$EDITOR" "$0" ;;
 esac
 
-#vol="$(wpctl get-volume @DEFAULT_AUDIO_SINK@)"
 vol=$(amixer get Master | tail -n1 | sed -r "s/.*\[(.*)%\].*/\1/")
 
 # If muted, print 🔇 and exit.
-#[ "$vol" != "${vol%\[MUTED\]}" ] && echo 🔇 && exit
-#if [ $(pacmd list-sinks | awk '/muted/ { print $2 }' | awk 'NR==1{print $1}') == "yes" ]
 if [ $(amixer get Master | awk 'NR==6{print $6}') == "[off]" ]
 then
     vol=-1
@@ -33,12 +31,21 @@ split() {
 	printf '%s' "$@"
 }
 vol="$(split "$vol" ".")"
-#vol="${vol##0}"
+
+hdphn="Headphone"
+cardnum=$(aplay -l | grep 'HDA Creative' | awk 'NR==1{gsub(/:/,""); print $2}')
+crntaudio=$(amixer -c $cardnum get 'Output Select' | awk -F: 'NR==4{gsub(/ /, ""); gsub("\047",""); print $2 }')
+if [ "$crntaudio" == "$hdphn" ]
+then
+    preicon="🎧"
+else
+    preicon=""
+fi
 
 case 1 in
-	$((vol >= 70)) ) icon="🔊" ;;
-	$((vol >= 30)) ) icon="🔉" ;;
-	$((vol >= 0)) ) icon="🔈" ;;
+	$((vol >= 70)) ) icon="${preicon}🔊" ;;
+	$((vol >= 30)) ) icon="${preicon}🔉" ;;
+	$((vol >= 0)) ) icon="${preicon}🔈" ;;
 	* ) echo 🔇 && exit ;;
 esac
 
