@@ -6,7 +6,8 @@ case $BLOCK_BUTTON in
 	1) amixer set Master toggle ;;
 	2) notify-send "📢 Volume module" "\- Shows volume 🔊, 🔇 if muted.
         - Left click to mute.
-        - Right Click to open audio mixer.
+        - Right Click to toggle between headphones and speakers.
+        - Middle click for info and open audio mixer.
         - Scroll to change." && 
         pavucontrol;;
 	3) swtchaudio ;;
