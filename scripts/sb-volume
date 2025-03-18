@@ -11,8 +11,8 @@ case $BLOCK_BUTTON in
         - Scroll to change." && 
         pavucontrol;;
 	3) swtchaudio ;;
-	4) pamixer --allow-boost -i 1 ;;
-	5) pamixer --allow-boost -d 1 ;;
+	4) amixer set "Master" 1%+ ;;
+	5) amixer set "Master" 1%- ;;
 	6) "$TERMINAL" -e "$EDITOR" "$0" ;;
 esac
 
