@@ -22,9 +22,7 @@ day=$(date | awk '{ print $3 }')
 
 case $BLOCK_BUTTON in
     # Print calendar with current day as red, notify-send can't render the highlight so span between as red
-    # Print appointments in google calendar, skip every other line which is empty
-    #1) notify-send -t 0 "This Month" "$(cal --color=always | sed "s/..7m/<b><span color=\"red\">/;s|..27m|</span></b>|")" && notify-send -t 0 "Appointments" "$(gcalcli --nocolor agenda | awk '{ if (NR % 2 == 0) { print }}')" ;;
-    1) notify-send -t 0 "This Month" "$(cal --color=always | sed "s/..7m/<b><span color=\"red\">/;s|..27m|</span></b>|")" ;;
+    1) notify-send -t 0 "This Month" "$(cal | sed "s/\<$(date +'%e')\>/<b><span color='red'>&<\/span><\/b>/")" ;;
 	2) notify-send "📅 Time/date module" "\- Left click to show upcoming appointments for the next three days via \`gcalcli agenda\` and show the month via \`cal\`" ;;
 	6) "$TERMINAL" -e "$EDITOR" "$0" ;;
 esac

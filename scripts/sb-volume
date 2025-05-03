@@ -18,7 +18,7 @@ esac
 vol=$(amixer get Master | tail -n1 | sed -r "s/.*\[(.*)%\].*/\1/")
 
 # If muted, print 🔇 and exit.
-if [ $(amixer get Master | awk 'NR==6{print $6}') == "[off]" ]
+if [ $(amixer get Master | awk 'NR==5{print $6}') == "[off]" ]
 then
     vol=-1
 fi
@@ -32,15 +32,17 @@ split() {
 }
 vol="$(split "$vol" ".")"
 
-hdphn="Headphone"
-cardnum=$(aplay -l | grep 'HDA Creative' | awk 'NR==1{gsub(/:/,""); print $2}')
-crntaudio=$(amixer -c $cardnum get 'Output Select' | awk -F: 'NR==4{gsub(/ /, ""); gsub("\047",""); print $2 }')
-if [ "$crntaudio" == "$hdphn" ]
-then
-    preicon="🎧"
-else
-    preicon=""
-fi
+preicon=""
+
+#hdphn="Headphone"
+#cardnum=$(aplay -l | grep 'HDA Creative' | awk 'NR==1{gsub(/:/,""); print $2}')
+#crntaudio=$(amixer -c $cardnum get 'Output Select' | awk -F: 'NR==4{gsub(/ /, ""); gsub("\047",""); print $2 }')
+#if [ "$crntaudio" == "$hdphn" ]
+#then
+#    preicon="🎧"
+#else
+#    preicon=""
+#fi
 
 case 1 in
 	$((vol >= 70)) ) icon="${preicon}🔊" ;;
