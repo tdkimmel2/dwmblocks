@@ -37,7 +37,7 @@ void setupsignals();
 void sighandler(int signum);
 int getstatus(char *str, char *last);
 void statusloop();
-void termhandler();
+void termhandler(int num);
 void pstdout();
 #ifndef NO_X
 void setroot();
@@ -252,7 +252,7 @@ void buttonhandler(int sig, siginfo_t *si, void *ucontext)
 }
 
 
-void termhandler()
+void termhandler(int num)
 {
 	statusContinue = 0;
 }

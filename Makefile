@@ -16,6 +16,9 @@ options:
 	@echo "LDFLAGS = ${LDFLAGS}"
 	@echo "CC      = ${CC}"
 
+blocks.h:
+	cp blocks.def.h $@
+
 dwmblocks: dwmblocks.c blocks.h
 	${CC} -o dwmblocks dwmblocks.c ${CFLAGS} ${LDFLAGS}
 
